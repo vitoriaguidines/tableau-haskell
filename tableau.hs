@@ -37,10 +37,21 @@ buildProofTree ((v, f):fs) =
                  else [newFormulas']
   in Node (v, f) (map buildProofTree (filter (not . null) branches))
 
-
 -- Função principal para construir a árvore de prova a partir de uma fórmula
 proofTree :: Expr -> Tree (Bool, Expr)
-proofTree formula = buildProofTree [(True, formula)]
+proofTree formula = buildProofTree [(False, formula)]
+
+-- Verifica se uma árvore de refutação é válida
+isValidRefutationTree :: Tree (Bool, Expr) -> Bool
+isValidRefutationTree (Node (val, expr) children)
+  | null children = not val && isAtomic expr
+  | val = False
+  | otherwise = all isValidRefutationTree children
+
+-- Verifica se uma expressão é um átomo
+isAtomic :: Expr -> Bool
+isAtomic (Atom _) = True
+isAtomic _ = False
 
 -- Função para percorrer a árvore de refutação e verificar se a fórmula é válida
 checkContradiction :: Tree (Bool, Expr) -> Bool
@@ -66,7 +77,7 @@ main = do
     formula <- getLine
     let formulaWithoutInconveniences = removeInconveniences formula
     let parsedFormula = parse exprParser "" formulaWithoutInconveniences
-    
+
     case parsedFormula of
         Left _ -> putStrLn "Fórmula inválida"
         Right expr -> do
@@ -77,6 +88,10 @@ main = do
             if checkContradiction tree
                 then putStrLn "A fórmula é válida"
                 else putStrLn "A fórmula não é válida"
-    
+
   where
     showNode (v, f) = (if v then "v: " else "f: ") ++ show f
+
+--b>(a&(b|a)) Inválida
+--a>(a>(b>a)) Válida  
+--(p|(q&r))>((p|q)&(p|r)) Válida
