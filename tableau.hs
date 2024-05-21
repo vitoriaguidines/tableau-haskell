@@ -1,40 +1,49 @@
 import ExpParser (Expr(..), exprParser)
-import Data.List (elemIndex)
 import Text.Parsec (parse)
 import Data.Tree (Tree(..), drawTree)
-
+import Data.List (nub)
 
 -- Função para remover espaços e hífens de uma string
 removeInconveniences :: String -> String
-removeInconveniences " " = ""
-removeInconveniences a = [e | e<-a, e /= ' ', e /= '-']
+removeInconveniences = filter (`notElem` [' ', '-'])
 
-proofTree :: Expr -> Tree Expr
-proofTree formula = case formula of
-    Atom _ -> Node formula []
-    Not f -> Node formula [proofTree f]
-    And f1 f2 -> Node formula [proofTree f1, proofTree f2]
-    Or f1 f2 -> Node formula [proofTree f1, proofTree f2]
-    Imply f1 f2 -> Node formula [proofTree f1, proofTree f2]
+-- Função para aplicar regras de prova e construir a árvore
+applyRules :: (Bool, Expr) -> [(Bool, Expr)]
+applyRules (True, Atom _) = []
+applyRules (False, Atom _) = []
+applyRules (v, Not f) = [(not v, f)]
+applyRules (True, And f1 f2) = [(True, f1), (True, f2)]
+applyRules (False, And f1 f2) = [(False, f1), (False, f2)]
+applyRules (True, Or f1 f2) = [(True, f1), (True, f2)]
+applyRules (False, Or f1 f2) = [(False, f1)]
+applyRules (True, Imply f1 f2) = [(False, f1), (True, f2)]
+applyRules (False, Imply f1 f2) = [(True, f1), (False, f2)]
 
+-- Função para construir a árvore de prova recursivamente
+buildProofTree :: [(Bool, Expr)] -> Tree (Bool, Expr)
+buildProofTree [] = error "No formulas to process"
+buildProofTree ((v, f):fs) = Node (v, f) (map buildProofTree branches)
+  where
+    newFormulas = applyRules (v, f) ++ fs
+    branches = case applyRules (v, f) of
+                 [] -> [newFormulas]
+                 [x] -> [newFormulas]
+                 xs -> map (\x -> nub (x:fs)) xs
+
+-- Função principal para construir a árvore de prova a partir de uma fórmula
+proofTree :: Expr -> Tree (Bool, Expr)
+proofTree formula = buildProofTree [(True, formula)]
 
 main :: IO ()
 main = do
-    --b>(a&(b|a)) Inválida
-    --a>(a>(b>a))
-    --(p|(q&r))>((p|q)&(p|r))
-    --(a&b)>a
-    --(a&b)>b
-    --a>(a|b)
-    --b>(a|b)
-    
     putStrLn "Insira uma fórmula lógica: "
     formula <- getLine
-
     let formulaWithoutInconveniences = removeInconveniences formula
-    let formattedFormula = parse exprParser "" formulaWithoutInconveniences
+    let parsedFormula = parse exprParser "" formulaWithoutInconveniences
     
-    let tree = case formattedFormula of
+    let tree = case parsedFormula of
                     Left _ -> error "Invalid formula"
                     Right expr -> proofTree expr
-    putStrLn $ drawTree $ fmap show tree
+    putStrLn $ drawTree $ fmap showNode tree
+  where
+    showNode (v, f) = (if v then "v: " else "f: ") ++ show f
