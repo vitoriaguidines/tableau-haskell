@@ -1,6 +1,6 @@
 import ExpParser (Expr(..), exprParser)
 import Text.Parsec (parse)
-import Data.Tree (Tree(..), drawTree)
+import Data.Tree (Tree(..), drawTree, flatten)
 import Data.List (nub)
 
 -- Função para remover espaços e hífens de uma string
@@ -19,15 +19,22 @@ applyRules (False, Or f1 f2) = [(False, f1), (False, f2)]
 applyRules (True, Imply f1 f2) = [(False, f1), (True, f2)]
 applyRules (False, Imply f1 f2) = [(True, f1), (False, f2)]
 
--- Função para construir a árvore de prova recursivamente
+-- Função para aplicar regras de prova com ramificação
+applyRulesWithBranching :: (Bool, Expr) -> (Bool, [(Bool, Expr)])
+applyRulesWithBranching (False, Imply f1 f2) = (False, [(True, f1), (False, f2)])
+applyRulesWithBranching (True, And f1 f2) = (False, [(True, f1), (True, f2)])
+applyRulesWithBranching (False, Or f1 f2) = (False, [(False, f1), (False, f2)])
+applyRulesWithBranching (v, f) = (True, applyRules (v, f))
+
+-- Função para construir a árvore de prova a partir de uma lista de fórmulas
 buildProofTree :: [(Bool, Expr)] -> Tree (Bool, Expr)
 buildProofTree [] = Node (True, Atom ' ') []
 buildProofTree ((v, f):fs) =
-  let newFormulas = applyRules (v, f) ++ fs
-      branches = case applyRules (v, f) of
-                   [] -> [newFormulas]
-                   [x] -> [newFormulas]
-                   xs -> map (\x -> nub (x:fs)) xs
+  let (newBranch, newFormulas) = applyRulesWithBranching (v, f)
+      newFormulas' = newFormulas ++ fs
+      branches = if newBranch
+                 then map (\x -> nub (x:fs)) newFormulas'
+                 else [newFormulas']
   in Node (v, f) (map buildProofTree (filter (not . null) branches))
 
 -- Função principal para construir a árvore de prova a partir de uma fórmula
@@ -46,6 +53,24 @@ isAtomic :: Expr -> Bool
 isAtomic (Atom _) = True
 isAtomic _ = False
 
+-- Função para percorrer a árvore de refutação e verificar se a fórmula é válida
+checkContradiction :: Tree (Bool, Expr) -> Bool
+checkContradiction (Node _ branches) = any checkContradictionInBranch branches
+  where
+    checkContradictionInBranch branch =
+      let formulas = flatten branch
+          atoms = [f | (v, f) <- formulas, isAtom f]
+      in any (\a -> (True, a) `elem` formulas && (False, a) `elem` formulas) atoms
+
+    isAtom (Atom _) = True
+    isAtom _ = False
+
+
+printTreeAsLists :: Tree (Bool, Expr) -> [[(Bool, Expr)]]
+printTreeAsLists (Node (v, f) []) = [[(v, f)]]
+printTreeAsLists (Node (v, f) branches) = 
+  map ((v, f) :) $ concatMap printTreeAsLists branches
+
 main :: IO ()
 main = do
     putStrLn "Insira uma fórmula lógica: "
@@ -58,9 +83,12 @@ main = do
         Right expr -> do
             let tree = proofTree expr
             putStrLn $ drawTree $ fmap showNode tree
-            if isValidRefutationTree tree
-                then putStrLn "A árvore de refutação é válida."
-                else putStrLn "A árvore de refutação não é válida."
+            let treeAsLists = printTreeAsLists tree
+            mapM_ print treeAsLists
+            if checkContradiction tree
+                then putStrLn "A fórmula é válida"
+                else putStrLn "A fórmula não é válida"
+
   where
     showNode (v, f) = (if v then "v: " else "f: ") ++ show f
 
