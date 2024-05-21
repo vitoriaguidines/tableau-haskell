@@ -15,20 +15,21 @@ applyRules (v, Not f) = [(not v, f)]
 applyRules (True, And f1 f2) = [(True, f1), (True, f2)]
 applyRules (False, And f1 f2) = [(False, f1), (False, f2)]
 applyRules (True, Or f1 f2) = [(True, f1), (True, f2)]
-applyRules (False, Or f1 f2) = [(False, f1)]
+applyRules (False, Or f1 f2) = [(False, f1), (False, f2)]
 applyRules (True, Imply f1 f2) = [(False, f1), (True, f2)]
 applyRules (False, Imply f1 f2) = [(True, f1), (False, f2)]
 
 -- Função para construir a árvore de prova recursivamente
 buildProofTree :: [(Bool, Expr)] -> Tree (Bool, Expr)
-buildProofTree [] = error "No formulas to process"
-buildProofTree ((v, f):fs) = Node (v, f) (map buildProofTree branches)
-  where
-    newFormulas = applyRules (v, f) ++ fs
-    branches = case applyRules (v, f) of
-                 [] -> [newFormulas]
-                 [x] -> [newFormulas]
-                 xs -> map (\x -> nub (x:fs)) xs
+buildProofTree [] = Node (True, Atom ' ') []
+buildProofTree ((v, f):fs) =
+  let newFormulas = applyRules (v, f) ++ fs
+      branches = case applyRules (v, f) of
+                   [] -> [newFormulas]
+                   [x] -> [newFormulas]
+                   xs -> map (\x -> nub (x:fs)) xs
+  in Node (v, f) (map buildProofTree (filter (not . null) branches))
+
 
 -- Função principal para construir a árvore de prova a partir de uma fórmula
 proofTree :: Expr -> Tree (Bool, Expr)
@@ -41,9 +42,10 @@ main = do
     let formulaWithoutInconveniences = removeInconveniences formula
     let parsedFormula = parse exprParser "" formulaWithoutInconveniences
     
-    let tree = case parsedFormula of
-                    Left _ -> error "Invalid formula"
-                    Right expr -> proofTree expr
-    putStrLn $ drawTree $ fmap showNode tree
+    case parsedFormula of
+        Left _ -> putStrLn "Fórmula inválida"
+        Right expr -> do
+            let tree = proofTree expr
+            putStrLn $ drawTree $ fmap showNode tree
   where
     showNode (v, f) = (if v then "v: " else "f: ") ++ show f

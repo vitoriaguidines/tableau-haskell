@@ -1,30 +1,26 @@
-module ExpParser(Expr(..), exprParser) 
-where
+module ExpParser (Expr(..), exprParser) where
 
 import Text.Parsec
 import Text.Parsec.String (Parser)
 
 -- Estrutura de dados para representar expressões lógicas
 data Expr
-    = Atom Char     
-    | Not Expr      
-    | And Expr Expr 
-    | Or Expr Expr  
-    | Imply Expr Expr 
-    deriving Show
+    = Atom Char
+    | Not Expr
+    | And Expr Expr
+    | Or Expr Expr
+    | Imply Expr Expr
+    deriving (Show, Eq)
 
 -- Função para lidar com expressões atômicas
 atomParser :: Parser Expr
-atomParser = do
-    c <- letter
-    return (Atom c)
+atomParser = Atom <$> letter
 
 -- Função para lidar com operadores de negação
 notParser :: Parser Expr
 notParser = do
     _ <- char '~'
-    expr <- factorParser
-    return (Not expr)
+    Not <$> factorParser
 
 -- Função para lidar com operador de conjunção
 andParser :: Parser (Expr -> Expr -> Expr)
