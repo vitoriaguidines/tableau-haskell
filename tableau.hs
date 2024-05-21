@@ -84,7 +84,7 @@ main = do
             let tree = proofTree expr
             putStrLn $ drawTree $ fmap showNode tree
             let treeAsLists = printTreeAsLists tree
-            mapM_ print treeAsLists
+            --mapM_ print treeAsLists
             if checkContradiction tree
                 then putStrLn "A fórmula é válida"
                 else putStrLn "A fórmula não é válida"
