@@ -55,16 +55,12 @@ isAtomic _ = False
 
 -- Função para percorrer a árvore de refutação e verificar se a fórmula é válida
 checkContradiction :: Tree (Bool, Expr) -> Bool
-checkContradiction (Node _ branches) = any checkContradictionInBranch branches
+checkContradiction (Node (v, f) children) = hasContradiction (flatten (Node (v, f) children))
   where
-    checkContradictionInBranch branch =
-      let formulas = flatten branch
-          atoms = [f | (v, f) <- formulas, isAtom f]
-      in any (\a -> (True, a) `elem` formulas && (False, a) `elem` formulas) atoms
-
-    isAtom (Atom _) = True
-    isAtom _ = False
-
+    hasContradiction :: [(Bool, Expr)] -> Bool
+    hasContradiction formulas =
+      let atoms = [(v, a) | (v, a) <- formulas, isAtomic a]
+      in any (\a -> (True, a) `elem` atoms && (False, a) `elem` atoms) [a | (_, a) <- atoms]
 
 printTreeAsLists :: Tree (Bool, Expr) -> [[(Bool, Expr)]]
 printTreeAsLists (Node (v, f) []) = [[(v, f)]]
@@ -86,12 +82,14 @@ main = do
             let treeAsLists = printTreeAsLists tree
             --mapM_ print treeAsLists
             if checkContradiction tree
-                then putStrLn "A fórmula é válida"
-                else putStrLn "A fórmula não é válida"
+                then putStrLn "A fórmula não é válida"
+                else putStrLn "A fórmula é válida"
 
   where
     showNode (v, f) = (if v then "v: " else "f: ") ++ show f
 
+
+
 --b>(a&(b|a)) Inválida
---a>(a>(b>a)) Válida  
+--a>(a>(b>a)) Válida    
 --(p|(q&r))>((p|q)&(p|r)) Válida
