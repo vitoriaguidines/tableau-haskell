@@ -3,6 +3,7 @@ import Text.Parsec (parse)
 import Data.Tree (Tree(..), drawTree, flatten)
 import Data.List (nub)
 
+
 -- Função para remover espaços e hífens de uma string
 removeInconveniences :: String -> String
 removeInconveniences = filter (`notElem` [' ', '-'])
@@ -37,33 +38,10 @@ buildProofTree ((v, f):fs) =
                  else [newFormulas']
   in Node (v, f) (map buildProofTree (filter (not . null) branches))
 
+
 -- Função principal para construir a árvore de prova a partir de uma fórmula
 proofTree :: Expr -> Tree (Bool, Expr)
-proofTree formula = buildProofTree [(False, formula)]
-
--- Verifica se uma árvore de refutação é válida
-isValidRefutationTree :: Tree (Bool, Expr) -> Bool
-isValidRefutationTree (Node (val, expr) children)
-  | null children = not val && isAtomic expr
-  | val = False
-  | otherwise = all isValidRefutationTree children
-
--- Verifica se uma expressão é um átomo
-isAtomic :: Expr -> Bool
-isAtomic (Atom _) = True
-isAtomic _ = False
-
--- Função para percorrer a árvore de refutação e verificar se a fórmula é válida
-checkContradiction :: Tree (Bool, Expr) -> Bool
-checkContradiction (Node _ branches) = any checkContradictionInBranch branches
-  where
-    checkContradictionInBranch branch =
-      let formulas = flatten branch
-          atoms = [f | (v, f) <- formulas, isAtom f]
-      in any (\a -> (True, a) `elem` formulas && (False, a) `elem` formulas) atoms
-
-    isAtom (Atom _) = True
-    isAtom _ = False
+proofTree formula = buildProofTree [(True, Not formula)]
 
 
 printTreeAsLists :: Tree (Bool, Expr) -> [[(Bool, Expr)]]
@@ -77,7 +55,7 @@ main = do
     formula <- getLine
     let formulaWithoutInconveniences = removeInconveniences formula
     let parsedFormula = parse exprParser "" formulaWithoutInconveniences
-
+    
     case parsedFormula of
         Left _ -> putStrLn "Fórmula inválida"
         Right expr -> do
@@ -85,13 +63,7 @@ main = do
             putStrLn $ drawTree $ fmap showNode tree
             let treeAsLists = printTreeAsLists tree
             mapM_ print treeAsLists
-            if checkContradiction tree
-                then putStrLn "A fórmula é válida"
-                else putStrLn "A fórmula não é válida"
 
+    
   where
-    showNode (v, f) = (if v then "v: " else "f: ") ++ show f
-
---b>(a&(b|a)) Inválida
---a>(a>(b>a)) Válida  
---(p|(q&r))>((p|q)&(p|r)) Válida
+    showNode (v, f) = (if v then "V: " else "F: ") ++ show f
