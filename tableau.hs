@@ -31,6 +31,18 @@ applyRulesWithBranching (True, And f1 f2) = (False, [(True, f1), (True, f2)])
 applyRulesWithBranching (False, Or f1 f2) = (False, [(False, f1), (False, f2)])
 applyRulesWithBranching (v, f) = (True, applyRules (v, f))
 
+-- Função para aplicar regras de prova com ramificação e verificar se é composta
+-- applyRulesWithBranching :: (Bool, Expr) -> (Bool, [(Bool, Expr)])
+-- applyRulesWithBranching (v, f)
+--   | isCompound f = (True, applyRules (v, f)) -- verifica se a função f é composta, e se for, aplica as regras de v e f
+--   | otherwise = case f of -- se não, verifica o tipo de f usando correspondência
+--       Imply f1 f2 -> (False, [(True, f1), (False, f2)])
+--       And f1 f2 -> (True, [(True, f1), (True, f2)])
+--       Or f1 f2 -> (False, [(False, f1), (False, f2)])
+--       _ -> (True, [(v, f)])
+
+-- ta imprimindo um monte de coisa eternamente e não sai da recursão
+
 -- Função para construir a árvore de prova a partir de uma lista de fórmulas
 buildProofTree :: [(Bool, Expr)] -> Tree (Bool, Expr)
 buildProofTree [] = Node (True, Atom ' ') []
