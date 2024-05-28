@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -Wno-overlapping-patterns #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use tuple-section" #-}
 import Data.List (nub)
 import Data.Tree (Tree (..), drawTree, flatten)
 import ExpParser (Expr (..), exprParser)
@@ -9,8 +12,13 @@ removeInconveniences = filter (`notElem` [' ', '-'])
 
 -- Função para verificar se uma expressão é composta
 isCompound :: Expr -> Bool
-isCompound (Atom _) = False
-isCompound _ = True
+isCompound (Atom _) = False -- revisar
+isCompound (Not (Atom _)) = False -- revisar
+isCompound (Not expr) = isCompound expr -- se é a negação de alguma expr, chama recusrivamente pra ver se é composta ou não
+isCompound (And _ _) = True
+isCompound (Or _ _) = True
+isCompound (Imply _ _) = True -- essas tres verificam se a expressao contém algum desses (and, or e imply)
+isCompound _ = False -- se n for nenhum desses não é composta
 
 -- Função para aplicar regras de prova e construir a árvore
 applyRules :: (Bool, Expr) -> [(Bool, Expr)]
@@ -24,26 +32,27 @@ applyRules (False, Or f1 f2) = [(False, f1), (False, f2)]
 applyRules (True, Imply f1 f2) = [(False, f1), (True, f2)]
 applyRules (False, Imply f1 f2) = [(True, f1), (False, f2)]
 
--- Função para aplicar regras de prova com ramificação
+-- -- Função para aplicar regras de prova com ramificação (certa)
 applyRulesWithBranching :: (Bool, Expr) -> (Bool, [(Bool, Expr)])
 applyRulesWithBranching (False, Imply f1 f2) = (False, [(True, f1), (False, f2)])
 applyRulesWithBranching (True, And f1 f2) = (False, [(True, f1), (True, f2)])
 applyRulesWithBranching (False, Or f1 f2) = (False, [(False, f1), (False, f2)])
 applyRulesWithBranching (v, f) = (True, applyRules (v, f))
 
--- Função para aplicar regras de prova com ramificação e verificar se é composta
--- applyRulesWithBranching :: (Bool, Expr) -> (Bool, [(Bool, Expr)])
+-- Função para aplicar regras de prova com ramificação e verificar se é composta (teste)
+-- applyRulesWithBranching :: (Bool, Expr) -> [(Bool, [Expr])]
 -- applyRulesWithBranching (v, f)
---   | isCompound f = (True, applyRules (v, f)) -- verifica se a função f é composta, e se for, aplica as regras de v e f
---   | otherwise = case f of -- se não, verifica o tipo de f usando correspondência
---       Imply f1 f2 -> (False, [(True, f1), (False, f2)])
---       And f1 f2 -> (True, [(True, f1), (True, f2)])
---       Or f1 f2 -> (False, [(False, f1), (False, f2)])
---       _ -> (True, [(v, f)])
+--   | isCompound f = case f of
+--       Imply f1 f2 -> [(False, [f1]), (True, [f2])] -- ramificação para Implicação
+--       And f1 f2   -> [(True, [f1, f2])]            -- sem ramificação para AND (E)
+--       Or f1 f2    -> [(False, [f1]), (False, [f2])]-- ramificação para OR (OU)
+--       Not f'      -> [(not v, [f'])]               -- negação inverte o valor de verdade
+--       _           -> [(v, [f])]                    -- qundo é genérico
+--   | otherwise = [(v, [f])]                         -- se não é composta, retorna como ela tá
 
 -- ta imprimindo um monte de coisa eternamente e não sai da recursão
 
--- Função para construir a árvore de prova a partir de uma lista de fórmulas
+-- Função para construir a árvore de prova a partir de uma lista de fórmulas (certa)
 buildProofTree :: [(Bool, Expr)] -> Tree (Bool, Expr)
 buildProofTree [] = Node (True, Atom ' ') []
 buildProofTree ((v, f) : fs) =
@@ -59,12 +68,12 @@ buildProofTree ((v, f) : fs) =
 proofTree :: Expr -> Tree (Bool, Expr)
 proofTree formula = buildProofTree [(True, Not formula)]
 
--- Função para transformar cada caminho da árvore em uma lista
+-- Função para transformar cada caminho da árvore em uma lista 
 branchTreeAsLists :: Tree (Bool, Expr) -> [[(Bool, Expr)]]
 branchTreeAsLists (Node (v, f) []) = [[(v, f)]]
 branchTreeAsLists (Node (v, f) branches) = map ((v, f) :) $ concatMap branchTreeAsLists branches
 
--- Função para verificar se uma fórmula é válida
+-- Função para verificar se uma fórmula é válida 
 checkValidate :: [[(Bool, Expr)]] -> IO ()
 checkValidate branches = do
   let numberedBranches = zip [1 ..] branches
@@ -84,7 +93,7 @@ checkValidate branches = do
       putStrLn ""
       return closed
 
--- Função para verificar se uma lista de átomos contém uma contradição
+-- Função para verificar se uma lista de átomos contém uma contradição 
 checkContradiction :: [String] -> Bool
 checkContradiction atoms = any checkAtom ['a' .. 'z']
   where
