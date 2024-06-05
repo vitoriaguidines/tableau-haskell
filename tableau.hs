@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wno-overlapping-patterns #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 {-# HLINT ignore "Use tuple-section" #-}
 import Data.List (nub)
 import Data.Tree (Tree (..), drawTree, flatten)
@@ -68,12 +69,12 @@ buildProofTree ((v, f) : fs) =
 proofTree :: Expr -> Tree (Bool, Expr)
 proofTree formula = buildProofTree [(True, Not formula)]
 
--- Função para transformar cada caminho da árvore em uma lista 
+-- Função para transformar cada caminho da árvore em uma lista
 branchTreeAsLists :: Tree (Bool, Expr) -> [[(Bool, Expr)]]
 branchTreeAsLists (Node (v, f) []) = [[(v, f)]]
 branchTreeAsLists (Node (v, f) branches) = map ((v, f) :) $ concatMap branchTreeAsLists branches
 
--- Função para verificar se uma fórmula é válida 
+-- Função para verificar se uma fórmula é válida
 checkValidate :: [[(Bool, Expr)]] -> IO ()
 checkValidate branches = do
   let numberedBranches = zip [1 ..] branches
@@ -93,7 +94,7 @@ checkValidate branches = do
       putStrLn ""
       return closed
 
--- Função para verificar se uma lista de átomos contém uma contradição 
+-- Função para verificar se uma lista de átomos contém uma contradição
 checkContradiction :: [String] -> Bool
 checkContradiction atoms = any checkAtom ['a' .. 'z']
   where
