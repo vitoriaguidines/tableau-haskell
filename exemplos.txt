@@ -1,4 +1,13 @@
-b>(a&(b|a))
+b>(a&(b|a)) 
 a>(a>(b>a))
 (p|(q&r))>((p|q)&(p|r))
 ((p|q)&(p|r))>(p|(q&r))
+a=a
+a=(~a)
+~(p|~p)
+a>(b>a)
+(a>b)>a
+(a|b)>a
+a>(a|b)
+(c&d)>d
+d>(c&d)
