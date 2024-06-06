@@ -52,6 +52,13 @@ branchTreeAsLists (Node (v, f) []) = [[(v, f)]]
 branchTreeAsLists (Node (v, f) branches) = concatMap (map ((v, f) :) . branchTreeAsLists) branches
 
 
+-- Função para verificar se uma lista de átomos contém uma contradição
+checkContradiction :: [(Bool, Char)] -> Bool
+checkContradiction atoms = any checkAtom ['a' .. 'z']
+  where
+    checkAtom a = elem (True, a) atoms && elem (False, a) atoms
+
+
 -- Função para verificar se uma fórmula é válida
 checkValidate :: [[(Bool, Expr)]] -> IO ()
 checkValidate branches = do
@@ -72,13 +79,6 @@ checkValidate branches = do
       putStrLn ""
       return closed
   
-
--- Função para verificar se uma lista de átomos contém uma contradição
-checkContradiction :: [(Bool, Char)] -> Bool
-checkContradiction atoms = any checkAtom ['a' .. 'z']
-  where
-    checkAtom a = elem (True, a) atoms && elem (False, a) atoms
-
 
 main :: IO ()
 main = do

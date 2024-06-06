@@ -43,7 +43,7 @@ implyParser = do
 
 biImplyParser :: Parser (Expr -> Expr -> Expr)
 biImplyParser = do
-    _ <- char '$'
+    _ <- char '='
     return BiImply
 
 -- Função para lidar com fatores
