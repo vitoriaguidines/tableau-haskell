@@ -10,6 +10,7 @@ data Expr
     | And Expr Expr
     | Or Expr Expr
     | Imply Expr Expr
+    | BiImply Expr Expr
     deriving (Show, Eq)
 
 -- Função para lidar com expressões atômicas
@@ -40,6 +41,11 @@ implyParser = do
     _ <- char '>'
     return Imply
 
+biImplyParser :: Parser (Expr -> Expr -> Expr)
+biImplyParser = do
+    _ <- char '$'
+    return BiImply
+
 -- Função para lidar com fatores
 factorParser :: Parser Expr
 factorParser = atomParser
@@ -48,7 +54,7 @@ factorParser = atomParser
 
 -- Função para lidar com termos
 termParser :: Parser Expr
-termParser = chainl1 factorParser (andParser <|> orParser <|> implyParser)
+termParser = chainl1 factorParser (andParser <|> orParser <|> implyParser <|> biImplyParser)
 
 -- Expressão principal
 exprParser :: Parser Expr
