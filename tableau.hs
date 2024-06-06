@@ -12,6 +12,8 @@ applyRulesWithBranching :: (Bool, Expr) -> [(Bool, Expr)]
 applyRulesWithBranching (False, And f1 f2) = [(False, f1), (False, f2)]
 applyRulesWithBranching (True, Or f1 f2) = [(True, f1), (True, f2)]
 applyRulesWithBranching (True, Imply f1 f2) = [(False, f1), (True, f2)]
+applyRulesWithBranching (True, BiImply f1 f2) = [(True, And f1 f2), (True, And (Not f1) (Not f2))]
+applyRulesWithBranching (False, BiImply f1 f2) = [(True, And f1 (Not f2)), (True, And (Not f1) f2)]
 
 -- Função para aplicar regras de prova sem ramificação
 applyRulesWithNoBranching :: (Bool, Expr) -> (Bool, [(Bool, Expr)])
@@ -69,6 +71,7 @@ checkContradiction :: [(Bool, Char)] -> Bool
 checkContradiction atoms = any checkAtom ['a' .. 'z']
   where
     checkAtom a = elem (True, a) atoms && elem (False, a) atoms
+
 
 main :: IO ()
 main = do
