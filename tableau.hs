@@ -39,9 +39,7 @@ buildProofTree ((v, f) : fs) =
 
 -- Função principal para construir a árvore de prova a partir de uma fórmula
 proofTree :: Expr -> Tree (Bool, Expr)
-proofTree formula = case formula of
-  Not _ -> buildProofTree [(True, formula)]
-  _ -> buildProofTree [(True, Not formula)]
+proofTree formula = buildProofTree [(True, Not formula)]
 
 -- Função para transformar cada caminho da árvore em uma lista
 branchTreeAsLists :: Tree (Bool, Expr) -> [[(Bool, Expr)]]
