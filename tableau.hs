@@ -39,20 +39,20 @@ buildProofTree ((v, f) : fs) =
 
 -- Função principal para construir a árvore de prova a partir de uma fórmula
 proofTree :: Expr -> Tree (Bool, Expr)
-proofTree formula = buildProofTree [(True, Not formula)]
+proofTree formula = case formula of
+  Not _ -> buildProofTree [(True, formula)]
+  _ -> buildProofTree [(True, Not formula)]
 
 -- Função para transformar cada caminho da árvore em uma lista
 branchTreeAsLists :: Tree (Bool, Expr) -> [[(Bool, Expr)]]
 branchTreeAsLists (Node (v, f) []) = [[(v, f)]]
 branchTreeAsLists (Node (v, f) branches) = concatMap (map ((v, f) :) . branchTreeAsLists) branches
 
-
 -- Função para verificar se uma lista de átomos contém uma contradição
 checkContradiction :: [(Bool, Char)] -> Bool
 checkContradiction atoms = any checkAtom ['a' .. 'z']
   where
     checkAtom a = elem (True, a) atoms && elem (False, a) atoms
-
 
 -- Função para verificar se uma fórmula é válida
 checkValidate :: [[(Bool, Expr)]] -> IO ()
